@@ -1,3 +1,4 @@
+
 # LLM Router
 
 A minimal Python package that provides a unified interface to multiple LLM providers, starting with OpenAI and Anthropic.
@@ -204,6 +205,36 @@ The package includes comprehensive error handling:
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
+
+## Changelog / Improvements
+
+### July 2025: Major Improvements
+
+- **Flexible Provider Initialization:** All providers now accept optional config parameters for future extensibility.
+- **Stricter Validation:** Message validation enforces a non-empty list of dicts with only 'role' and 'content' keys, both non-empty strings.
+- **Parameter Validation:** Providers validate allowed parameters before making API calls.
+- **Model Name Validation:** Providers can validate model names for correctness.
+- **Provider Registry:** Adding new providers is as simple as subclassing `BaseProvider` and updating the provider registry in `LLMRouter`.
+- **Provider Metadata:** Each provider exposes a `provider_name` property for easier routing and metadata.
+- **System Message Handling:** Anthropic provider now handles multiple system messages robustly.
+- **Robust Error Handling:** All providers use clear, standardized error reporting and handle missing/empty fields gracefully.
+- **OpenAI-style Client:** `LLMClient` supports extra provider config and is more robust.
+- **Cleaner, More Extensible Design:** Easier to add new providers and maintain a clean, scalable codebase.
+- **Improved Documentation:** README and docstrings updated to reflect new usage patterns, extensibility, and error handling.
+
+
+## Why This Design?
+
+This design was chosen to maximize extensibility, maintainability, and ease of use for both end users and future contributors:
+
+- **Abstraction & Modularity:** By defining a strict `BaseProvider` interface, all providers must follow the same contract, making it easy to add new LLM providers with minimal risk of breaking the system.
+- **Unified API:** The OpenAI-style interface (`LLMClient`) ensures that users can switch between providers with zero code changes, lowering the barrier to experimentation and adoption.
+- **Validation & Error Handling:** Centralized validation and error handling make the library robust and safe for use in production and at scale.
+- **Provider Registry:** The registry pattern in the router makes it trivial to add new providers—just register the class, no need to change core logic.
+- **Standardized Responses:** All providers return a consistent response format, simplifying downstream usage and integration.
+- **Documentation & Developer Experience:** Comprehensive docstrings, type hints, and a clear README make it easy for others to understand, use, and extend the library.
+
+This approach balances flexibility (easy to add new models/providers) with safety (hard to misuse or break), and is inspired by best practices from both open-source libraries and production systems.
 
 ## License
 
