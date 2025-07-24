@@ -2,6 +2,8 @@
 
 A minimal Python package that provides a unified interface to multiple LLM providers, starting with OpenAI and Anthropic.
 
+Please contribute and let me know of any suggestions!
+
 ## Features
 
 - **Modular Design**: Easy to extend with new providers
