@@ -18,71 +18,67 @@ class AnthropicProvider(BaseProvider):
         # You'll need to add your Anthropic API key here
         self.client = anthropic.Anthropic(api_key=api_key)
     
+    provider_name = "anthropic"
+
     def chat(self, model: str, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
         """
         Send a chat completion request to Anthropic.
-        
         Args:
-            model: The Anthropic model to use (e.g., 'claude-3-sonnet-20240229', 'claude-3-opus-20240229')
-            messages: List of message dictionaries with 'role' and 'content' keys
-            **kwargs: Additional parameters like max_tokens, temperature, top_p, etc.
-            
+            model: The Anthropic model to use
+            messages: List of message dicts with 'role' and 'content' keys
+            **kwargs: Additional parameters (max_tokens, temperature, top_p, etc.)
         Returns:
             Dictionary containing the Anthropic response
         """
+        self.validate_model_name(model)
         self._validate_messages(messages)
-        
+        allowed_params = {"max_tokens", "temperature", "top_p", "stop_sequences", "metadata"}
+        self._validate_common_params(kwargs, allowed=allowed_params)
+
         try:
-            # Convert OpenAI-style messages to Anthropic format
             anthropic_messages = self._convert_messages(messages)
-            
             response = self.client.messages.create(
                 model=model,
                 messages=anthropic_messages,
                 **kwargs
             )
-            
             return {
-                'provider': 'anthropic',
+                'provider': self.provider_name,
                 'model': model,
-                'content': response.content[0].text,
+                'content': response.content[0].text if response.content else "",
                 'usage': {
-                    'input_tokens': response.usage.input_tokens,
-                    'output_tokens': response.usage.output_tokens
+                    'input_tokens': getattr(response.usage, 'input_tokens', None),
+                    'output_tokens': getattr(response.usage, 'output_tokens', None)
                 },
                 'raw_response': response
             }
-            
         except Exception as e:
-            raise Exception(f"Anthropic API error: {str(e)}")
+            raise RuntimeError(f"Anthropic API error: {str(e)}") from e
     
     def _convert_messages(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
         """
         Convert OpenAI-style messages to Anthropic format.
-        
+        - System messages are prepended to the first user message, or become a user message if none exists.
         Args:
             messages: List of OpenAI-style message dictionaries
-            
         Returns:
             List of Anthropic-style message dictionaries
         """
-        converted_messages = []
-        
+        converted = []
+        system_content = []
         for message in messages:
             role = message['role']
             content = message['content']
-            
-            # Map OpenAI roles to Anthropic roles
-            if role == 'user':
-                converted_messages.append({'role': 'user', 'content': content})
-            elif role == 'assistant':
-                converted_messages.append({'role': 'assistant', 'content': content})
-            elif role == 'system':
-                # Anthropic doesn't have system messages, so we'll prepend to the first user message
-                if converted_messages and converted_messages[0]['role'] == 'user':
-                    converted_messages[0]['content'] = f"{content}\n\n{converted_messages[0]['content']}"
-                else:
-                    # If no user message yet, create one with system content
-                    converted_messages.append({'role': 'user', 'content': content})
-        
-        return converted_messages
+            if role == 'system':
+                system_content.append(content)
+            elif role in ('user', 'assistant'):
+                converted.append({'role': role, 'content': content})
+
+        if system_content:
+            system_text = "\n\n".join(system_content)
+            if converted and converted[0]['role'] == 'user':
+                converted[0]['content'] = f"{system_text}\n\n{converted[0]['content']}"
+            else:
+                converted.insert(0, {'role': 'user', 'content': system_text})
+
+        return converted
