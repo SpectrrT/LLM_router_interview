@@ -207,6 +207,8 @@ The package includes comprehensive error handling:
 4. Add tests if applicable
 5. Submit a pull request
 
+Thank you and have fun with the AI!
+
 ## License
 
 This project is licensed under the MIT License.
